@@ -1,5 +1,6 @@
-import { actions, afterMount, connect, kea, listeners, path, reducers, selectors } from 'kea'
+import { actions, afterMount, beforeUnmount, connect, kea, listeners, path, reducers, selectors } from 'kea'
 import { loaders } from 'kea-loaders'
+import { router, urlToAction } from 'kea-router'
 import api, { ApiMethodOptions, PaginatedResponse } from 'lib/api'
 import { lemonToast } from 'lib/lemon-ui/LemonToast/LemonToast'
 import posthog from 'posthog-js'
@@ -138,24 +139,15 @@ export const dataWarehouseSettingsLogic = kea<dataWarehouseSettingsLogicType>([
             },
         ],
     }),
+    urlToAction(({ actions }) => ({
+        '/data-warehouse/*': () => {
+            actions.loadSources(null)
+        },
+    })),
     listeners(({ actions, values, cache }) => ({
         deleteSelfManagedTable: async ({ tableId }) => {
             await api.dataWarehouseTables.delete(tableId)
             actions.loadDatabase()
-        },
-        loadSourcesSuccess: () => {
-            clearTimeout(cache.refreshTimeout)
-
-            cache.refreshTimeout = setTimeout(() => {
-                actions.loadSources(null)
-            }, REFRESH_INTERVAL)
-        },
-        loadSourcesFailure: () => {
-            clearTimeout(cache.refreshTimeout)
-
-            cache.refreshTimeout = setTimeout(() => {
-                actions.loadSources(null)
-            }, REFRESH_INTERVAL)
         },
         deleteSource: async ({ source }) => {
             await api.externalDataSources.delete(source.id)
@@ -210,8 +202,29 @@ export const dataWarehouseSettingsLogic = kea<dataWarehouseSettingsLogicType>([
         updateSchema: (schema) => {
             posthog.capture('schema updated', { shouldSync: schema.should_sync, syncType: schema.sync_type })
         },
+        loadSourcesSuccess: () => {
+            clearTimeout(cache.refreshTimeout)
+
+            if (router.values.location.pathname.includes('data-warehouse')) {
+                cache.refreshTimeout = setTimeout(() => {
+                    actions.loadSources(null)
+                }, REFRESH_INTERVAL)
+            }
+        },
+        loadSourcesFailure: () => {
+            clearTimeout(cache.refreshTimeout)
+
+            if (router.values.location.pathname.includes('data-warehouse')) {
+                cache.refreshTimeout = setTimeout(() => {
+                    actions.loadSources(null)
+                }, REFRESH_INTERVAL)
+            }
+        },
     })),
     afterMount(({ actions }) => {
         actions.loadSources(null)
+    }),
+    beforeUnmount(({ cache }) => {
+        clearTimeout(cache.refreshTimeout)
     }),
 ])

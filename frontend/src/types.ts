@@ -2013,6 +2013,7 @@ export interface DatedAnnotationType extends Omit<AnnotationType, 'date_marker'>
 export enum ChartDisplayType {
     ActionsLineGraph = 'ActionsLineGraph',
     ActionsBar = 'ActionsBar',
+    ActionsStackedBar = 'ActionsStackedBar',
     ActionsAreaGraph = 'ActionsAreaGraph',
     ActionsLineGraphCumulative = 'ActionsLineGraphCumulative',
     BoldNumber = 'BoldNumber',
@@ -2082,15 +2083,10 @@ export enum RetentionPeriod {
 export type BreakdownKeyType = string | number | (string | number)[] | null
 
 /**
- * Legacy multiple breakdowns had `property` and `type` fields.
- * Mirroring the legacy fields here for backwards compatibility with multiple breakdowns.
+ * Legacy breakdown.
  */
 export interface Breakdown {
-    value?: string
-    /**
-     * Legacy breakdown has a `property` field that is `value` now.
-     */
-    property?: string | number
+    property: string | number
     type: BreakdownType
     normalize_url?: boolean
     histogram_bin_count?: number
@@ -3833,7 +3829,7 @@ export enum DataWarehouseSettingsTab {
     SelfManaged = 'self-managed',
 }
 
-export const externalDataSources = ['Stripe', 'Hubspot', 'Postgres', 'Zendesk', 'Snowflake'] as const
+export const externalDataSources = ['Stripe', 'Hubspot', 'Postgres', 'MySQL', 'Zendesk', 'Snowflake'] as const
 
 export type ExternalDataSourceType = (typeof externalDataSources)[number]
 
@@ -4017,7 +4013,7 @@ export type BatchExportService =
 
 export type PipelineInterval = 'hour' | 'day' | 'every 5 minutes'
 
-export type DataWarehouseSyncInterval = 'day' | 'week' | 'month'
+export type DataWarehouseSyncInterval = '5min' | '30min' | '1hour' | '6hour' | '12hour' | '24hour' | '7day' | '30day'
 
 export type BatchExportConfiguration = {
     // User provided data for the export. This is the data that the user
@@ -4107,11 +4103,13 @@ export enum SDKKey {
     GATSBY = 'gatsby',
     GO = 'go',
     GOOGLE_TAG_MANAGER = 'google_tag_manager',
+    HELICONE = 'helicone',
     HTML_SNIPPET = 'html',
     IOS = 'ios',
     JAVA = 'java',
     JS_WEB = 'javascript_web',
     LARAVEL = 'laravel',
+    LANGFUSE = 'langfuse',
     NEXT_JS = 'nextjs',
     NODE_JS = 'nodejs',
     NUXT_JS = 'nuxtjs',
@@ -4128,6 +4126,7 @@ export enum SDKKey {
     SENTRY = 'sentry',
     SHOPIFY = 'shopify',
     SVELTE = 'svelte',
+    TRACELOOP = 'traceloop',
     VUE_JS = 'vuejs',
     WEBFLOW = 'webflow',
     WORDPRESS = 'wordpress',
@@ -4139,6 +4138,7 @@ export enum SDKTag {
     SERVER = 'Server',
     INTEGRATION = 'Integration',
     RECOMMENDED = 'Recommended',
+    LLM = 'LLM',
     OTHER = 'Other',
 }
 
@@ -4289,13 +4289,18 @@ export type HogFunctionType = {
     status?: HogFunctionStatus
 }
 
-export type HogFunctionConfigurationType = Omit<HogFunctionType, 'created_at' | 'created_by' | 'updated_at' | 'status'>
+export type HogFunctionConfigurationType = Omit<
+    HogFunctionType,
+    'created_at' | 'created_by' | 'updated_at' | 'status' | 'hog'
+> & {
+    hog?: HogFunctionType['hog'] // In the config it can be empty if using a template
+}
 
 export type HogFunctionTemplateType = Pick<
     HogFunctionType,
     'id' | 'name' | 'description' | 'hog' | 'inputs_schema' | 'filters' | 'icon_url'
 > & {
-    status: 'alpha' | 'beta' | 'stable'
+    status: 'alpha' | 'beta' | 'stable' | 'free'
 }
 
 export type HogFunctionIconResponse = {
@@ -4372,6 +4377,28 @@ export interface AlertType {
     insight?: number
     target_value: string
     anomaly_condition: AnomalyCondition
+}
+
+export type AppMetricsV2Response = {
+    labels: string[]
+    series: {
+        name: string
+        values: number[]
+    }[]
+}
+
+export type AppMetricsTotalsV2Response = {
+    totals: Record<string, number>
+}
+
+export type AppMetricsV2RequestParams = {
+    after?: string
+    before?: string
+    // Comma separated list of log levels
+    name?: string
+    kind?: string
+    interval?: 'hour' | 'day' | 'week'
+    breakdown_by?: 'name' | 'kind'
 }
 
 export enum DataWarehouseTab {
