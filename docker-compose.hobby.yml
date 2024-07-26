@@ -138,8 +138,7 @@ services:
             file: docker-compose.base.yml
             service: temporal
         environment:
-            ENABLE_ES: false
-            TEMPORAL_HOST: temporal
+            - ENABLE_ES=false
         ports:
             - 7233:7233
         volumes:
