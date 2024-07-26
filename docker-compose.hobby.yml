@@ -138,7 +138,8 @@ services:
             file: docker-compose.base.yml
             service: temporal
         environment:
-            - ENABLE_ES=false
+            ENABLE_ES: false
+            TEMPORAL_HOST: temporal
         ports:
             - 7233:7233
         volumes:
@@ -175,6 +176,7 @@ services:
         environment:
             SENTRY_DSN: $SENTRY_DSN
             SITE_URL: https://$DOMAIN
+            SECRET_KEY: $POSTHOG_SECRET
         depends_on:
             - db
             - redis
