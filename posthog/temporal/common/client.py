@@ -24,6 +24,7 @@ async def connect(
             client_cert=bytes(client_cert, "utf-8"),
             client_private_key=bytes(client_key, "utf-8"),
         )
+    host = "temporal"
     client = await Client.connect(
         f"{host}:{port}",
         namespace=namespace,
